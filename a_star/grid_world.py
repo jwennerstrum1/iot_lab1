@@ -8,7 +8,7 @@ import numpy as np
 import math
 import pdb
 import bisect
-
+from collections import deque
 
 class grid_world:
 
@@ -22,6 +22,7 @@ class grid_world:
         self.end = grid_cell(end)
         self.world = world
         self.f_costs = {start: 0} # Dictionary between coordinates (TUPLE) and value (double)
+        self.path_to_dest = deque()
 
 
     def run_a_start(self):
@@ -51,12 +52,13 @@ class grid_world:
         while True:
             coords = current.coord
             self.world[coords[0]][coords[1]] = 2
+            self.path_to_dest.append(current.coords)
             if current == self.start:
                 break
             current = grid_cell(self.parentOf[current.coord])
         return
 
-
+    
     def hasFoundShorterPathToNode(self, node, newCost):
         if node.coord in self.f_costs:
             costOnRecord = self.f_costs[node.coord]
