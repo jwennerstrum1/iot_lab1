@@ -50,9 +50,9 @@ class grid_world:
                         neighbor.score = f_tmp
                         bisect.insort(self.open_list, neighbor)
         while True:
-            coords = current.coord
-            self.world[coords[0]][coords[1]] = 2
-            self.path_to_dest.append(current.coords)
+            coord = current.coord
+            self.world[coord[0]][coord[1]] = 2
+            self.path_to_dest.append(coord)
             if current == self.start:
                 break
             current = grid_cell(self.parentOf[current.coord])
@@ -76,9 +76,7 @@ class grid_world:
     
 
     def popLowestCostNode(self):
-        item = self.open_list[-1]
-
-        self.open_list.pop()
+        item = self.open_list.pop()
         return item
 
     def neighborsOf(self, node):
