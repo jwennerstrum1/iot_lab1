@@ -5,7 +5,7 @@ import numpy as np
 
 # np.set_printoptions(threshold=np.inf, linewidth=np.inf)
 
-# filename = 'test_map.txt'
+# filename = 'sample_map.txt'
 # # filename = 'block_left.txt'
 
 
@@ -30,7 +30,7 @@ def driver():
     # start = (37, 24)
     # end = (37, 45)
 
-    filename = 'test_map.txt'
+    filename = 'sample_map.txt'
     start = (0, 0)
     end = (2, 3)
 
