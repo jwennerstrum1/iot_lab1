@@ -19,7 +19,7 @@ import numpy as np
 
 # world = utils.readArrayFromFile(filename)
 # gw = grid_world(world, start, end)
-# gw.run_a_start()
+# gw.run_a_star()
 
 
 def driver():
@@ -36,7 +36,7 @@ def driver():
 
     world = utils.readArrayFromFile(filename)
     gw = grid_world(world, start, end)
-    gw.run_a_start()
+    gw.run_a_star()
     return gw
 
 # if __name__ == "__main__":

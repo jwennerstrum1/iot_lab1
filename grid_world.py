@@ -24,8 +24,15 @@ class grid_world:
         self.f_costs = {start: 0} # Dictionary between coordinates (TUPLE) and value (double)
         self.path_to_dest = deque()
 
+    def reset(self):
+        self.open_list = []
+        self.closed_list = []
+        self.parentOf = {}
+        self.f_costs = {start: 0}
+        self.path_to_dest = deque()
 
-    def run_a_start(self):
+
+    def run_a_star(self):
         # add start to open
         bisect.insort(self.open_list, self.start)
         while True:
@@ -102,7 +109,12 @@ class grid_world:
             return True
         return False
 
-    
+    def get_x_length(self):
+        return len(self.world)
+
+    def get_y_length(self):
+        return len(self.world[0])
+        
 
 class grid_cell:
     def __init__(self, tup, score=-1):
