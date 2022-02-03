@@ -3,15 +3,18 @@ from utils import *
 import picar_4wd as fc
 import us_module as us
 from grid_world import grid_world
+import path_follow as pf
 
 class autonomous_vehicle:
 
-    def __init__(self):
-        self.gw = grid_world(np.zeros((75,100), dtype=np.uint8), (0,0), (75,90))
+    def __init__(self, start=(0,0), end=(20,20), step_size=1):
+        self.step_size = step_size
+        self.gw = grid_world(np.zeros((75,100), dtype=np.uint8), start, end)
         self.previousPointOnObject = None
-        self.my_location = (0,0)
+        self.my_location = start
         self.my_direction = direction.NORTH
-        self.us = us.us_module(step_size=5)
+        self.us = us.us_module(step_size=5) # angle step, not grid cell length
+        self.pf = pf.navigation_module(step_size = step_size)
 
     def translate_car_coords_to_world_coords(self, x_car, y_car):
         rotation_angle = self.my_direction * -90
@@ -23,9 +26,9 @@ class autonomous_vehicle:
     def is_point_in_world_bounds(self, x_gw,y_gw):
         max_horizon_x = self.gw.get_x_length()
         max_horizon_y = self.gw.get_y_length()
-        if is_point_in_bounds((x_gw, y_gw), max_horizon_x, max_horizon_y):
-            addDetectionToMap(x_gw, y_gw)
-            previousPointOnObject
+        return is_point_in_bounds((x_gw, y_gw), max_horizon_x, max_horizon_y)
+            # self.addDetectionToMap(x_gw, y_gw)
+            # previousPointOnObject
     
         
     def scan_horizon(self):
@@ -55,7 +58,7 @@ class autonomous_vehicle:
     def addDetectionToMap(self, x_gw, y_gw):
         if self.isPointContinuationOfObject():
             self.interpolateBorder(x_gw, y_gw)
-        markPointOnMap(x_gw,y_gw)
+        self.markPointOnMap(x_gw,y_gw)
 
     def isPointContinuationOfObject(self):
         retval = self.previousPointOnObject is not None
@@ -91,7 +94,9 @@ class autonomous_vehicle:
         
 if __name__ == "__main__":
     a = autonomous_vehicle()
-    pdb.set_trace()
     a.scan_horizon()
-    dump_map(a.gw.world, filename="gw_out.txt")
+    a.gw.run_a_star()
+    a.pf.followPath(a.gw.path_to_dest)
+    
+    
     

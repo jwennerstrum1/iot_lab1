@@ -7,6 +7,7 @@ from enum import IntEnum
 import pdb
 import grid_world
 import gw_driver
+from utils import *
 
 # -----> y
 # |
@@ -22,85 +23,78 @@ import gw_driver
 
 # gw = gw_driver.driver()
 
-class direction(IntEnum):
-    NORTH=0
-    WEST=1
-    SOUTH=2
-    EAST=3
-
-turn_time = 1.3  # time to turn 90 deg at 1 speed
-avg_speed = 10 #cm/sec
-step_size = 5 #cm
-
-def turn_right(current_direction):
-    fc.turn_right(1)
-    time.sleep(turn_time)
-    fc.stop()
-    return direction((current_direction + 4 - 1) % 4)
-
-def turn_left(current_direction):
-    fc.turn_left(1)
-    time.sleep(turn_time)
-    fc.stop()
-    return direction((current_direction + 1) % 4)
-
-turn_funcs = [turn_left, turn_right]
+# class direction(IntEnum):
+#     NORTH=0
+#     WEST=1
+#     SOUTH=2
+#     EAST=3
 
 
-def step_forward(num_steps):
-    pause_time = num_steps * step_size / avg_speed
-    fc.forward(1)
-    time.sleep(pause_time)
-    fc.stop()
+class navigation_module:
 
+    def __init__(self, turn_time=1.3, avg_speed=10, step_size=5):
+        self.turn_time = turn_time
+        self.avg_speed = avg_speed # in cm/sec
+        self.step_size = step_size # in cm
+        self.turn_funcs = [self.turn_left, self.turn_right]
+        self.current_direction = direction.NORTH
+        self.current_node = None
+        
+    def turn_right(self, current_direction):
+        fc.turn_right(1)
+        time.sleep(self.turn_time)
+        fc.stop()
+        return direction((current_direction + 4 - 1) % 4)
 
-def followPath(path, stepSize):
-    # assume the starting point is the first element of the path
-    # and that the car is facing the y-axis
-    current_node = path.pop()
-    cur_direction = direction.NORTH
-    pdb.set_trace()
-    while len(path) != 0:
-        next_node = path.pop()
-        cur_direction = face_next_node(current_node, next_node, cur_direction)
-        current_node = next_node
-        # step_forward(1)
+    def turn_left(self, current_direction):
+        fc.turn_left(1)
+        time.sleep(self.turn_time)
+        fc.stop()
+        return direction((current_direction + 1) % 4)
 
-def get_turn_idx(current_node, next_node, current_direction):
-    dx = next_node[0] - current_node[0]
-    dy = next_node[1] - current_node[1]
+    def step_forward(self, num_steps):
+        pause_time = num_steps * self.step_size / self.avg_speed
+        fc.forward(1)
+        time.sleep(pause_time)
+        fc.stop()
 
-    if abs(dx) > 0:
-        if current_direction == direction.WEST or current_direction == direction.EAST:
-            return
-        tmp = current_direction + dx + 1
-    elif abs(dy) > 0:
-        if current_direction == direction.NORTH or current_direction == direction.SOUTH:
-            return
-        tmp = current_direction + dy
-    else:
-      return
+    def followPath(self, path):
+        # assume the starting point is the first element of the path
+        # and that the car is facing the y-axis
+        self.current_node = path.pop()
+        pdb.set_trace()
+        while len(path) != 0:
+            next_node = path.pop()
+            self.current_direction = self.face_next_node(next_node)
+            self.current_node = next_node
+            self.step_forward(1)
+
+    def face_next_node(self, next_node):
+        idx = self.get_turn_idx(next_node)
+        if idx is None:
+            return self.current_direction
+        new_direction = self.turn_funcs[idx](self.current_direction)
+        return new_direction
     
-    idx = (tmp // 2) % 2
-    return idx
+    def get_turn_idx(self, next_node):
+        dx = next_node[0] - self.current_node[0]
+        dy = next_node[1] - self.current_node[1]
 
-def face_next_node(current_node, next_node, current_direction):
-    # dx = next_node[0] - current_node[0]
-    # dy = next_node[1] - current_node[1]
+        if abs(dx) > 0:
+            if self.current_direction == direction.WEST or self.current_direction == direction.EAST:
+                return
+            tmp = self.current_direction + dx + 1
+        elif abs(dy) > 0:
+            if self.current_direction == direction.NORTH or self.current_direction == direction.SOUTH:
+                return
+            tmp = self.current_direction + dy
+        else:
+          return
 
-    # if abs(dx) > 0:
-    #     tmp = current_direction + dx
-    # elif abs(dy) > 0:
-    #     tmp = current_direction + dy + 1
-    # else:
-    #   return current_direction
+        idx = (tmp // 2) % 2
+        return idx
+
     
-    # idx = (tmp // 2) % 2
-    idx = get_turn_idx(current_node, next_node, current_direction)
-    if idx is None:
-        return current_direction
-    new_direction = turn_funcs[idx](current_direction)
-    return new_direction
 
 
     
