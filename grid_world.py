@@ -37,6 +37,8 @@ class grid_world:
         bisect.insort(self.open_list, self.start)
         while True:
             current = self.popLowestCostNode()
+            if (len(self.open_list)  == 1):
+                pdb.set_trace()
             self.closed_list.append(current)
 
             if current == self.end:
@@ -53,9 +55,14 @@ class grid_world:
                 if self.hasFoundShorterPathToNode(neighbor, f_tmp) or neighbor not in self.open_list:
                     self.f_costs[neighbor.coord] = f_tmp
                     self.parentOf[neighbor.coord] = current.coord
-                    if neighbor not in self.open_list:
-                        neighbor.score = f_tmp
-                        bisect.insort(self.open_list, neighbor)
+                    neighbor.score = f_tmp
+                    if neighbor in self.open_list:
+                        #remove node from open_list and readd it with updated order
+                        self.open_list.remove(neighbor)
+
+                    neighbor.score = f_tmp
+                    bisect.insort(self.open_list, neighbor)
+                    
         while True:
             coord = current.coord
             self.world[coord[0]][coord[1]] = 2

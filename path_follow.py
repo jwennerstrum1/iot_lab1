@@ -32,42 +32,46 @@ from utils import *
 
 class navigation_module:
 
-    def __init__(self, turn_time=1.3, avg_speed=10, step_size=5):
+    def __init__(self, turn_time=1.5, avg_speed=20, step_size=5):
         self.turn_time = turn_time
-        self.avg_speed = avg_speed # in cm/sec
+        self.avg_speed = avg_speed # in cm/sec at power 1
         self.step_size = step_size # in cm
         self.turn_funcs = [self.turn_left, self.turn_right]
         self.current_direction = direction.NORTH
         self.current_node = None
         
     def turn_right(self, current_direction):
-        fc.turn_right(1)
+        fc.turn_left(1) # due to a bug with picar
         time.sleep(self.turn_time)
         fc.stop()
         return direction((current_direction + 4 - 1) % 4)
 
     def turn_left(self, current_direction):
-        fc.turn_left(1)
+        fc.turn_right(1) # due to a bug with picar
         time.sleep(self.turn_time)
         fc.stop()
         return direction((current_direction + 1) % 4)
 
     def step_forward(self, num_steps):
         pause_time = num_steps * self.step_size / self.avg_speed
-        fc.forward(1)
+        fc.backward(1) # due to a bug with picar
         time.sleep(pause_time)
         fc.stop()
 
-    def followPath(self, path):
+    def follow_path_for_n(self, path, n=np.inf):
         # assume the starting point is the first element of the path
         # and that the car is facing the y-axis
+        count = 0
         self.current_node = path.pop()
-        pdb.set_trace()
-        while len(path) != 0:
+        # pdb.set_trace()
+        while len(path) != 0 or count < n:
             next_node = path.pop()
             self.current_direction = self.face_next_node(next_node)
             self.current_node = next_node
             self.step_forward(1)
+            count+=1
+
+        return self.current_node, self.current_direction
 
     def face_next_node(self, next_node):
         idx = self.get_turn_idx(next_node)

@@ -70,7 +70,7 @@ def rotation_transform(theta, point):
     rotation_matrix = np.array([[math.cos(theta * math.pi/180), -1 * math.sin(theta * math.pi/180)], [math.sin(theta * math.pi/180), math.cos(theta * math.pi/180)]], dtype=np.float)
     to_multiply = np.array([[point[0]], [point[1]]], dtype=np.float)
     res = rotation_matrix @ to_multiply
-    return np.round(res[0][0], 2), np.round(res[1][0], 2)
+    return np.round(res[0][0], 4), np.round(res[1][0], 4)
 
 
 
@@ -96,22 +96,22 @@ def getInterpolationCoordinates(x, y, previousPoint):
     coords = []
     if abs(m) < 1:
         y_t = y1
-        for x_t in range(round(x1), round(x2)):
+        for x_t in np.arange(x1, x2):
             # buffer logic
-            for i in range(3):
+            for i in range(1,2):
                 coords.append((x_t, y_t - i))
                 coords.append((x_t, y_t + i))
             coords.append((x_t, y_t))
             y_t += m
     else:
         if (m >= 0):
-            iter = range(round(y1), round(y2))
+            iter = np.arange(y1, y2)
         else:
-            iter = reversed(range(round(y2+1),round(y1+1)))
+            iter = reversed(np.arange(y2+1,y1+1))
         x_t = x1
         for y_t in iter:
             # buffer logic
-            for i in range(3):
+            for i in range(1,2):
                 coords.append((x_t - i, y_t))
                 coords.append((x_t + i, y_t))
             coords.append((x_t, y_t))
@@ -122,8 +122,9 @@ def getInterpolationCoordinates(x, y, previousPoint):
 
 
 def is_point_in_bounds(point, x_max=0, y_max=0):
-    x = point[0]
-    y = point[1]
+    # check whether the rounded value will be in bounds or not
+    x = round(point[0])
+    y = round(point[1])
     retval = x >= 0 and x < x_max and y >= 0 and y < y_max
     return retval
     
