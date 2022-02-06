@@ -23,33 +23,50 @@ class grid_world:
         self.world = world
         self.f_costs = {start: 0} # Dictionary between coordinates (TUPLE) and value (double)
         self.path_to_dest = deque()
+        
 
     def reset(self):
         self.open_list = []
         self.closed_list = []
         self.parentOf = {}
-        self.f_costs = {start: 0}
+        self.f_costs = {self.start.coord: 0}
         self.path_to_dest = deque()
+        self.remove_astar_path()
+        return
+
+    def remove_astar_path(self):
+        x,y= np.where(self.world == 254)
+        for i in range(len(x)):
+            self.world[x[i]][y[i]] = 0
+        return
+
+    def set_start(self, start_coord):
+        self.start = grid_cell(start_coord)
+        self.f_costs = {start_coord: 0} # set the initial f_cost
+        return
 
 
-    def run_a_star(self):
+    def run_a_star(self, boundary_threshold=1):
         # add start to open
         bisect.insort(self.open_list, self.start)
         while True:
             current = self.popLowestCostNode()
-            if (len(self.open_list)  == 1):
-                pdb.set_trace()
+            # if (len(self.open_list)  == 1):
+                # pdb.set_trace()
             self.closed_list.append(current)
 
             if current == self.end:
                 break
             for neighbor in self.neighborsOf(current):
-                if self.isNotTraversible(neighbor) or neighbor in self.closed_list:
+                if boundary_threshold == 0:
+                    boundary_threshold = 1 # edge case, for the first run of A*, consider the threshold of 1
+                    
+                if self.isNotTraversible(neighbor, boundary_threshold) or neighbor in self.closed_list:
                     continue
 
                 # calculate f cost of node
                 g_tmp = self.f_costs[current.coord] + 1
-                h_tmp = self.linearDistance(neighbor, self.end)
+                h_tmp = utils.linear_distance(neighbor.coord, self.end.coord)
                 f_tmp = g_tmp + h_tmp
 
                 if self.hasFoundShorterPathToNode(neighbor, f_tmp) or neighbor not in self.open_list:
@@ -65,7 +82,7 @@ class grid_world:
                     
         while True:
             coord = current.coord
-            self.world[coord[0]][coord[1]] = 2
+            self.world[coord[0]][coord[1]] = 254  # Uncomment out if you want to see the created path
             self.path_to_dest.append(coord)
             if current == self.start:
                 break
@@ -80,13 +97,13 @@ class grid_world:
                 return True
         return False
 
-    def linearDistance(self, p1, p2):
-        x1 = p1.coord[0]
-        y1 = p1.coord[1]
-        x2 = p2.coord[0]
-        y2 = p2.coord[1]
-        dist = math.sqrt((y2 - y1)** 2 + (x2 - x1)**2)
-        return dist
+    # def linearDistance(self, p1, p2):
+    #     x1 = p1.coord[0]
+    #     y1 = p1.coord[1]
+    #     x2 = p2.coord[0]
+    #     y2 = p2.coord[1]
+    #     dist = math.sqrt((y2 - y1)** 2 + (x2 - x1)**2)
+    #     return dist
     
 
     def popLowestCostNode(self):
@@ -105,13 +122,13 @@ class grid_world:
         return [north,west,south,east]
 
 
-    def isNotTraversible(self, node):
+    def isNotTraversible(self, node, boundary_threshold):
         x = node.coord[0]
         y = node.coord[1]
         if x < 0 or x >= self.x_dim or y < 0 or y >= self.y_dim:
             # out of bounds
             return True
-        elif self.world[x][y] == 1:
+        elif self.world[x][y] >= boundary_threshold:
             # ran into wall
             return True
         return False

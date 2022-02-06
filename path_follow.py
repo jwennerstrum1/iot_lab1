@@ -32,17 +32,17 @@ from utils import *
 
 class navigation_module:
 
-    def __init__(self, turn_time=1.5, avg_speed=20, step_size=5):
+    def __init__(self, turn_time=1.3, avg_speed=25, step_size=5, direction=direction.NORTH):
         self.turn_time = turn_time
         self.avg_speed = avg_speed # in cm/sec at power 1
         self.step_size = step_size # in cm
         self.turn_funcs = [self.turn_left, self.turn_right]
-        self.current_direction = direction.NORTH
+        self.current_direction = direction
         self.current_node = None
         
     def turn_right(self, current_direction):
         fc.turn_left(1) # due to a bug with picar
-        time.sleep(self.turn_time)
+        time.sleep(self.turn_time + 0.1)
         fc.stop()
         return direction((current_direction + 4 - 1) % 4)
 
@@ -57,6 +57,7 @@ class navigation_module:
         fc.backward(1) # due to a bug with picar
         time.sleep(pause_time)
         fc.stop()
+        time.sleep(0.1)
 
     def follow_path_for_n(self, path, n=np.inf):
         # assume the starting point is the first element of the path
@@ -64,12 +65,13 @@ class navigation_module:
         count = 0
         self.current_node = path.pop()
         # pdb.set_trace()
-        while len(path) != 0 or count < n:
+        while len(path) != 0 and count < n:
             next_node = path.pop()
             self.current_direction = self.face_next_node(next_node)
             self.current_node = next_node
             self.step_forward(1)
             count+=1
+            
 
         return self.current_node, self.current_direction
 
@@ -77,7 +79,9 @@ class navigation_module:
         idx = self.get_turn_idx(next_node)
         if idx is None:
             return self.current_direction
+        time.sleep(0.1)
         new_direction = self.turn_funcs[idx](self.current_direction)
+        time.sleep(0.1)
         return new_direction
     
     def get_turn_idx(self, next_node):

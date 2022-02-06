@@ -45,8 +45,8 @@ def clean_string(line):
 
 def convertToCartesian(degrees, distance):
     # converts degrees and distance to x,y coordinates
-    y_1 = distance * np.around(math.cos(math.radians(degrees)), 2)
-    x_1 = distance * np.around(math.sin(math.radians(degrees)), 2) * -1
+    y_1 = distance * np.around(math.sin(math.radians(degrees)), 2)
+    x_1 = distance * np.around(math.cos(math.radians(degrees)), 2)
     return x_1, y_1
 
 
@@ -138,4 +138,12 @@ def dump_map(array, filename="grid_world_dump.txt"):
     f.write(np.array_str(array))
     np.set_printoptions(threshold=threshold_old, linewidth=linewidth_old)
     f.close()
+    
+def linear_distance(p1, p2):
+    x1 = p1[0]
+    y1 = p1[1]
+    x2 = p2[0]
+    y2 = p2[1]
+    dist = math.sqrt((y2 - y1)** 2 + (x2 - x1)**2)
+    return dist
     

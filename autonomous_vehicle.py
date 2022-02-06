@@ -5,10 +5,11 @@ import us_module as us
 from grid_world import grid_world
 import path_follow as pf
 import sys
+import pdb
 
 class autonomous_vehicle:
-
-    def __init__(self, start=(25,0), end=(25,50), world_size=(50,50), step_size=1):
+    # scale_factor = the size of each grid cell in the grid world (in cm)
+    def __init__(self, start=(25,0), end=(8,0), world_size=(50,50), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.3):
         if start[0] < 0  or start[0] >= world_size[0] or start[1] < 0 or start[1] >= world_size[1]:
             print("ERROR: start coordinate not in bounds")
             sys.exit(0)
@@ -18,21 +19,27 @@ class autonomous_vehicle:
             print("ERROR: end coordinate not in bounds")
             sys.exit(0)
         
-        self.step_size = step_size
+        self.scale_factor = scale_factor
         self.gw = grid_world(np.zeros(world_size, dtype=np.uint8), start, end)
         self.previousPointOnObject = None
         self.my_location = start
-        self.my_direction = direction.NORTH
+        self.my_direction = starting_direction
         self.end = end
-        self.us = us.us_module(step_size=5, scale = 1/step_size) # angle step, not grid cell length
-        self.pf = pf.navigation_module(step_size = step_size)
+        self.us = us.us_module(step_size=5, scale = 1/scale_factor) # angle step, not grid cell length
+        self.pf = pf.navigation_module(step_size = scale_factor, direction=starting_direction, turn_time=turn_time)
+        self.scan_count=0
 
     def translate_car_coords_to_world_coords(self, x_car, y_car):
-        rotation_angle = self.my_direction * -90
+        rotation_angle = ((self.my_direction + 1) % 4) * 90
         x_c1, y_c1 = rotation_transform(rotation_angle, (x_car, y_car))
         x_gw = x_c1 + self.my_location[0]
         y_gw = y_c1 + self.my_location[1]
         return x_gw, y_gw
+
+    def translate_camera_coords_to_car(self, x_cam, y_cam):
+        x_car = x_cam + 10.16 * 1/self.scale_factor
+        y_car = y_cam
+        return x_car, y_car
 
     def is_point_in_world_bounds(self, x_gw,y_gw):
         max_horizon_x = self.gw.get_x_length()
@@ -46,7 +53,9 @@ class autonomous_vehicle:
         # self.reset_us()
         # global previousPointOnObject
         # global max_horizonx,min_horizon,max_horizony
+        self.scan_count += 1
         scan_results = self.us.scan_horizon()
+        # pdb.set_trace()
         for i in range(len(scan_results)):
             res = scan_results[i]
             distance = res[0]
@@ -54,7 +63,8 @@ class autonomous_vehicle:
             if distance > 0:
                 # if an object is detected, get the location of an object with respect to the grid world
                 # and mark it on the map
-                x_car, y_car = convertToCartesian(angle, distance)
+                x_cam, y_cam = convertToCartesian(angle, distance)
+                x_car, y_car = self.translate_camera_coords_to_car(x_cam, y_cam)
                 x_gw_float, y_gw_float = self.translate_car_coords_to_world_coords(x_car, y_car)
                 if self.is_point_in_world_bounds(x_gw_float, y_gw_float):
                     self.addDetectionToMap(x_gw_float, y_gw_float)
@@ -67,13 +77,17 @@ class autonomous_vehicle:
         
 
     def addDetectionToMap(self, x_gw_float, y_gw_float):
-        # if self.isPointContinuationOfObject():
-        #     self.interpolateBorder(x_gw_float, y_gw_float)
-        self.markPointOnMap(round(x_gw_float), round(y_gw_float))
+        if self.isPointContinuationOfObject(x_gw_float, y_gw_float):
+            self.interpolateBorder(x_gw_float, y_gw_float)
+        self.markPointOnMap(round(x_gw_float), round(y_gw_float), identifier=self.scan_count)
 
-    def isPointContinuationOfObject(self):
-        retval = self.previousPointOnObject is not None
-        return retval
+    def isPointContinuationOfObject(self, x_gw_float, y_gw_float):
+        if self.previousPointOnObject is not None:
+            dist_to_last_point = linear_distance((x_gw_float, y_gw_float), self.previousPointOnObject)
+            if dist_to_last_point > 2:
+                return True
+        
+        return False
         
     def markPointOnMap(self,x_gw, y_gw, identifier=1):
         self.gw.world[int(x_gw)][int(y_gw)] = identifier
@@ -88,16 +102,36 @@ class autonomous_vehicle:
             if is_point_in_bounds(point, max_horizon_x, max_horizon_y):
                 x = round(point[0])
                 y = round(point[1])
-                self.markPointOnMap(x, y)
+                self.markPointOnMap(x, y, identifier=self.scan_count)
 
             
     def main_loop(self):
+        count = 1
         while self.my_location != self.end:
+            # mark my location
+            self.markPointOnMap(self.my_location[0], self.my_location[1], identifier=255)
+            
+            # scan 
             self.scan_horizon()
-            dump_map(a.gw.world)
+            dump_map(self.gw.world, filename=("dump_world_" + str(count)  + "_scan.txt"))
+
+            # path plan
+            # self.gw.run_a_star(boundary_threshold=self.scan_count-1) # only consider bounds that were identified in the last two scans when calculating A-Star
             self.gw.run_a_star()
-            dump_map(a.gw.world)
-            self.my_location, self.my_direction = self.pf.follow_path_for_n(self.gw.path_to_dest, 5)
+            self.markPointOnMap(self.my_location[0], self.my_location[1], identifier=255)
+            dump_map(self.gw.world, filename=("dump_world_" + str(count)  + "_astar.txt"))
+
+            # pause after dump
+            # pdb.set_trace()
+
+            # path execution
+            self.markPointOnMap(self.my_location[0], self.my_location[1], identifier=0) # clear current location on map before moving point
+            self.my_location, self.my_direction = self.pf.follow_path_for_n(self.gw.path_to_dest, n=6)
+
+            # prepare for next iteratio
+            self.gw.reset()
+            self.gw.set_start(self.my_location)
+            count += 1
     
 
     # def scan_step():
@@ -113,8 +147,11 @@ class autonomous_vehicle:
 
         
 if __name__ == "__main__":
-    a = autonomous_vehicle(step_size = 5, world_size=(20,15), start=(14,0), end=(5,0))
-    a.main_loop()
+    # a = autonomous_vehicle(scale_factor = 5, world_size=(20,15), start=(14,0), end=(5,0))
+    # a = autonomous_vehicle(world_size=(50,50), start=(25,2), end=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25) # WESTWARD
+    # a = autonomous_vehicle(world_size=(50,50), end=(25,2), start=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25)
+    a = autonomous_vehicle(world_size=(50,50), end=(45,2), start=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25) # EASTWARD
+    a.main_loop() 
     # a.scan_horizon()
     # dump_map(a.gw.world)
     # a.gw.run_a_star()
