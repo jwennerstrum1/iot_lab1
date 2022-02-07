@@ -8,6 +8,10 @@ import pdb
 import grid_world
 import gw_driver
 from utils import *
+import cv2
+from object_detector import ObjectDetector
+from object_detector import ObjectDetectorOptions
+import sys
 
 # -----> y
 # |
@@ -102,7 +106,76 @@ class navigation_module:
         idx = (tmp // 2) % 2
         return idx
 
-    
+    def detect_objects():
+        wdith = 640
+        height = 480
+        cap = cv2.VideoCapture(0)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        model = 'efficientdet_lite0.tflite'
+        enable_edgetpu = false
 
 
-    
+        options = ObjectDetectorOptions(
+            num_threads=num_threads,
+            score_threshold=0.3,
+            max_results=3,
+            enable_edgetpu=enable_edgetpu)
+        detector = ObjectDetector(model_path=model, options=options)
+        try:
+            while cap.isOpened():
+                success, image = cap.read()
+                if not success:
+                    cap.release()
+                    # cv2.destroyAllWindows()
+                    sys.exit('ERROR: Unable to read from webcam.  Please verify your webcam settings')
+
+                counter += 1
+                image = cv2.flip(image,0) # flip the image vertically
+                detections = detector.detect(image)
+                image = utils.visualize(image,detections)
+
+                # if counter % fps_avg_frame_count == 0:
+                  # end_time = time.time()
+                  # fps = fps_avg_frame_count / (end_time - start_time)
+                  # start_time = time.time()
+
+                  # # Show the FPS
+                  # fps_text = 'FPS = {:.1f}'.format(fps)
+                  # text_location = (left_margin, row_size)
+                  # cv2.putText(image, fps_text, text_location, cv2.FONT_HERSHEY_PLAIN, font_size, text_color,font_thickness)
+
+                for detection in detections:
+                      for category in detection.categories:
+                          if category.label == 'stop sign' or category.label == 'person':
+                              bb = detection.bounding_box
+                              pdb.set_trace()
+                              dist = utils.linear_distance((bb.left, bb.top), (bb.right, bb.bottom))
+
+                              if category.label == 'stop sign':
+                                if dist > 400:
+                                  fc.stop()
+                              else:
+                                if dist > 212:
+                                  fc.stop()
+                                  hasStopSign = True
+
+
+                              hasStopSign = True
+
+                              if not stopSignInLastFrame:
+                                  #first time seeing a stop sign
+                                  # fc.stop()
+                                  print("[CAMERA] Stop sign detected")
+                                  stopSignInLastFrame=True
+
+                              break
+                      if hasStopSign:
+                          # break out of larger loop with all the detections
+                          break
+
+        except:
+            print('ERROR: something happened with the car')
+            
+        cap.release()
+        cv2.destroyAllWindows()
