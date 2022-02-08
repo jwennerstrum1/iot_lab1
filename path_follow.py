@@ -5,7 +5,6 @@ from collections import deque
 import math
 from enum import IntEnum
 import pdb
-import cam_module
 import utils
 
 # -----> y
@@ -38,6 +37,9 @@ class navigation_module:
         self.turn_funcs = [self.turn_left, self.turn_right]
         self.current_direction = direction
         self.current_node = None
+
+    def set_current_node(self, node):
+        self.current_node = node
         
     def turn_right(self, current_direction):
         fc.turn_left(1) # due to a bug with picar
@@ -98,7 +100,7 @@ class navigation_module:
                 return
             tmp = self.current_direction + dx + 1
         elif abs(dy) > 0:
-            if self.current_direction == utils.direction.north or self.current_direction == utils.direction.south:
+            if self.current_direction == utils.direction.NORTH or self.current_direction == utils.direction.SOUTH:
                 return
             tmp = self.current_direction + dy
         else:

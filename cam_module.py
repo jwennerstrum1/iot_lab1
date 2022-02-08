@@ -12,21 +12,21 @@ class camera:
       self.cap = None
       self.enable_edgetpu = False
       self.model = 'efficientdet_lite0.tflite'
-
+      
       try:
           self.cap = cv2.VideoCapture(0)
-          cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-          cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+          self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+          self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
       except:
           print('ERROR: Something occured while setting up the car')
-          cap.release()
+          self.cap.release()
 
       options = ObjectDetectorOptions(
               num_threads=1,
               score_threshold=0.3,
               max_results=3,
-              enable_edgetpu=enable_edgetpu)
-      self.detector = ObjectDetector(model_path=model, options=options)
+              enable_edgetpu=self.enable_edgetpu)
+      self.detector = ObjectDetector(model_path=self.model, options=options)
 
     def __del__(self):
         self.cap.release()
@@ -39,7 +39,7 @@ class camera:
             print('ERROR: Unable to read from camera')
         return success, image
 
-    def detect_objects(self):
+    def detect_obstacles(self):
         success, image = self.capture_image()
         image = cv2.flip(image, 0 )
         detections = self.detector.detect(image)

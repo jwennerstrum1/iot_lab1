@@ -11,7 +11,7 @@ import cam_module
 
 class autonomous_vehicle:
     # scale_factor = the size of each grid cell in the grid world (in cm)
-    def __init__(self, start=(25,0), end=(8,0), world_size=(50,50), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.3):
+    def __init__(self, start=(25,0), end=(8,0), world_size=(50,50), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.3):
         if start[0] < 0  or start[0] >= world_size[0] or start[1] < 0 or start[1] >= world_size[1]:
             print("ERROR: start coordinate not in bounds")
             sys.exit(0)
@@ -105,8 +105,10 @@ class autonomous_vehicle:
     def follow_path(self, path_list, n=6):
         count = 0
         while len(path_list) != 0 and count < n:
-            pedestrian_in_view, stop_sign_in_view = self.camera.detect_obstacle()
+            pedestrian_in_view, stop_sign_in_view = self.camera.detect_obstacles()
+            # pdb.set_trace()
             if (pedestrian_in_view):
+                # pdb.set_trace()
                 time.sleep(1)
                 # wait a second and 
                 continue
@@ -124,6 +126,8 @@ class autonomous_vehicle:
 
             
     def main_loop(self):
+        self.pf.current_node = self.my_location
+        
         count = 1
         while self.my_location != self.end:
             # mark my location
@@ -168,7 +172,10 @@ if __name__ == "__main__":
     # a = autonomous_vehicle(scale_factor = 5, world_size=(20,15), start=(14,0), end=(5,0))
     # a = autonomous_vehicle(world_size=(50,50), start=(25,2), end=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25) # WESTWARD
     # a = autonomous_vehicle(world_size=(50,50), end=(25,2), start=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25)
-    a = autonomous_vehicle(world_size=(50,50), end=(45,2), start=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25) # EASTWARD
+    # a = autonomous_vehicle(world_size=(50,50), end=(45,2), start=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25) # EASTWARD
+
+    a = autonomous_vehicle(world_size=(50,50), start=(45,2), end=(45,45), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # EASTWARD
+    
     a.main_loop() 
     # a.scan_horizon()
     # dump_map(a.gw.world)

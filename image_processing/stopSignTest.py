@@ -60,7 +60,7 @@ def run(model: str, camera_id: int, width: int, height: int, num_threads: int,
   detector = ObjectDetector(model_path=model, options=options)
 
   us = Ultrasonic(Pin("D8"), Pin("D9"))
-  fc.backward(1)
+  # fc.backward(1)
 
   stopSignInLastFrame = False
   hasStopSign = False
@@ -99,13 +99,13 @@ def run(model: str, camera_id: int, width: int, height: int, num_threads: int,
                         end_point = (right, bottom)
                         dist = utils.linear_distance(start_point, end_point)
                         
-                        if category.label == 'stop sign':
-                          if dist > 400:
-                            fc.stop()
-                        else:
-                          if dist > 212:
-                            fc.stop()
-                            hasStopSign = True
+                        # if category.label == 'stop sign':
+                        #   if dist > 400:
+                        #     # fc.stop()
+                        # else:
+                        #   if dist > 212:
+                        #     # fc.stop()
+                        #     hasStopSign = True
                             
                         
                         hasStopSign = True
@@ -129,7 +129,7 @@ def run(model: str, camera_id: int, width: int, height: int, num_threads: int,
 
           if not hasStopSign:
             # stop sign dissapeared from view, continue moving
-            fc.backward(1)
+            # fc.backward(1)
             stopSignInLastFrame = False
                 
           # pdb.set_trace()
@@ -138,7 +138,7 @@ def run(model: str, camera_id: int, width: int, height: int, num_threads: int,
           if key == 27:
               # press ESC to quit
               print('User ending program')
-              fc.stop()
+              # fc.stop()
               break
           
           hasStopSign = False
