@@ -30,7 +30,7 @@ class autonomous_vehicle:
         self.us = us.us_module(step_size=5, scale = 1/scale_factor) # angle step, not grid cell length
         self.pf = pf.navigation_module(step_size = scale_factor, direction=starting_direction, turn_time=turn_time)
         self.scan_count=0
-        self.steps_after_stop_sign = 0
+        self.steps_after_stop_sign = np.inf
         self.camera = cam_module.camera()
 
     def translate_car_coords_to_world_coords(self, x_car, y_car):
@@ -104,25 +104,54 @@ class autonomous_vehicle:
 
     def follow_path(self, path_list, n=6):
         count = 0
+        pedestrian_spotted = False
         while len(path_list) != 0 and count < n:
             pedestrian_in_view, stop_sign_in_view = self.camera.detect_obstacles()
-            # pdb.set_trace()
             if (pedestrian_in_view):
+                distance_to_pedestrian = self.get_distance_to_next_barrier()
+                if distance_to_pedestrian < 15:
+                    pedestrian_spotted = True
+                    time.sleep(1)
+                    # wait a second and continue scanning until they are gone
+                    continue
+            elif pedestrian_spotted:
                 # pdb.set_trace()
-                time.sleep(1)
-                # wait a second and 
-                continue
-            if stop_sign_in_view and self.steps_after_stop_sign > 5:
-                # stop at sighgt of stop sign for 2 seconds
-                # don't stop if it sees the stop sign within 5 steps
-                # lkely the same stop sign
-                time.sleep(2)
-                self.steps_after_stop_sign = 0
+                pedestrian_spotted = False
+                # if a pedestrian was spotted but has left view,
+                # remove any barriers in the gridworld that were due to
+                # the pedestrian since they are no longer there.
+                # then break out of navigation loop to trigger
+                # a rescan of the environment
+                self.clear_pedestrian_barrier()
+                break
+                
+    
+            if stop_sign_in_view and self.steps_after_stop_sign > 20:
+                # pdb.set_trace()
+                distance_to_stop_sign = self.get_distance_to_next_barrier()
+                if distance_to_stop_sign < 15:
+                    # pdb.set_trace()
+                    # stop at sighgt of stop sign for 2 seconds if a stop
+                    # sign is in view and it is close to you
+                    # don't stop if it sees the stop sign within 10 steps
+                    # after seeing another stop sign.  This is likely going to
+                    # be the same stop sign
+                    time.sleep(5)
+                    self.steps_after_stop_sign = 0
                 
             next_node = path_list.pop()
             self.my_direction, self.my_location = self.pf.move_to_next_coord(next_node)
             self.steps_after_stop_sign += 1
             count += 1
+
+
+    def clear_pedestrian_barrier(self):
+        self.gw.remove_barriers_in_path(self.my_location, self.my_direction)
+            
+    def get_distance_to_next_barrier(self):
+        distance_to_barrier = self.gw.get_distance_to_closest_barrier(self.my_location, self.my_direction)
+        return distance_to_barrier
+        
 
             
     def main_loop(self):
@@ -170,11 +199,10 @@ class autonomous_vehicle:
         
 if __name__ == "__main__":
     # a = autonomous_vehicle(scale_factor = 5, world_size=(20,15), start=(14,0), end=(5,0))
-    # a = autonomous_vehicle(world_size=(50,50), start=(25,2), end=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25) # WESTWARD
-    # a = autonomous_vehicle(world_size=(50,50), end=(25,2), start=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25)
-    # a = autonomous_vehicle(world_size=(50,50), end=(45,2), start=(8,2), scale_factor=5, starting_direction=direction.NORTH, turn_time=1.25) # EASTWARD
-
-    a = autonomous_vehicle(world_size=(50,50), start=(45,2), end=(45,45), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # EASTWARD
+    a = autonomous_vehicle(world_size=(50,50), start=(25,2), end=(8,2), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # WESTWARD
+    # a = autonomous_vehicle(world_size=(50,50), end=(25,2), start=(8,2), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25)
+    # a = autonomous_vehicle(world_size=(50,50), end=(45,2), start=(8,2), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # EASTWARD
+    # a = autonomous_vehicle(world_size=(50,50), start=(45,2), end=(45,45), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # EASTWARD
     
     a.main_loop() 
     # a.scan_horizon()
