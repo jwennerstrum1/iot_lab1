@@ -49,11 +49,8 @@ class autonomous_vehicle:
         max_horizon_x = self.gw.get_x_length()
         max_horizon_y = self.gw.get_y_length()
         return utils.is_point_in_bounds((x_gw, y_gw), max_horizon_x, max_horizon_y)
-            # self.addDetectionToMap(x_gw, y_gw)
-            # previousPointOnObject
         
     def scan_horizon(self):
-        # self.reset_us()
         self.scan_count += 1
         scan_results = self.us.scan_horizon()
         for i in range(len(scan_results)):
@@ -108,6 +105,7 @@ class autonomous_vehicle:
         while len(path_list) != 0 and count < n:
             pedestrian_in_view, stop_sign_in_view = self.camera.detect_obstacles()
             if (pedestrian_in_view):
+                print("Pedestrian detected")
                 distance_to_pedestrian = self.get_distance_to_next_barrier()
                 if distance_to_pedestrian < 15:
                     pedestrian_spotted = True
@@ -115,7 +113,7 @@ class autonomous_vehicle:
                     # wait a second and continue scanning until they are gone
                     continue
             elif pedestrian_spotted:
-                # pdb.set_trace()
+                print("Pedestrian gone - proceeding")
                 pedestrian_spotted = False
                 # if a pedestrian was spotted but has left view,
                 # remove any barriers in the gridworld that were due to
@@ -127,10 +125,10 @@ class autonomous_vehicle:
                 
     
             if stop_sign_in_view and self.steps_after_stop_sign > 20:
-                # pdb.set_trace()
+                print("Stop Sign detected")
                 distance_to_stop_sign = self.get_distance_to_next_barrier()
                 if distance_to_stop_sign < 15:
-                    # pdb.set_trace()
+                    print("Stopping at stop sign")
                     # stop at sighgt of stop sign for 2 seconds if a stop
                     # sign is in view and it is close to you
                     # don't stop if it sees the stop sign within 10 steps
@@ -138,6 +136,8 @@ class autonomous_vehicle:
                     # be the same stop sign
                     time.sleep(5)
                     self.steps_after_stop_sign = 0
+                else:
+                    print("Already stopped at stop sign")
                 
             next_node = path_list.pop()
             self.my_direction, self.my_location = self.pf.move_to_next_coord(next_node)
@@ -152,7 +152,6 @@ class autonomous_vehicle:
         distance_to_barrier = self.gw.get_distance_to_closest_barrier(self.my_location, self.my_direction)
         return distance_to_barrier
         
-
             
     def main_loop(self):
         self.pf.current_node = self.my_location
@@ -172,9 +171,6 @@ class autonomous_vehicle:
             self.markPointOnMap(self.my_location[0], self.my_location[1], identifier=255)
             utils.dump_map(self.gw.world, filename=("dump_world_" + str(count)  + "_astar.txt"))
 
-            # pause after dump
-            # pdb.set_trace()
-
             # path execution
             self.markPointOnMap(self.my_location[0], self.my_location[1], identifier=0) # clear current location on map before moving point
             self.follow_path(self.gw.path_to_dest, n=6) # follow path for n steps
@@ -184,32 +180,14 @@ class autonomous_vehicle:
             self.gw.set_start(self.my_location)
             count += 1
     
-
-    # def scan_step():
-    #     self.us_current_angle -= us_step
-    #     distance = fc.get_distance_at(us_current_angle)
-    #     return distance
-    
-                
-    # def reset_us():
-    #     self.us_current_angle= 90
-    #     fc.servo.set_angle(self.us_current_angle)
-    #     time.sleep(0.1)
-
         
 if __name__ == "__main__":
     # a = autonomous_vehicle(scale_factor = 5, world_size=(20,15), start=(14,0), end=(5,0))
-    a = autonomous_vehicle(world_size=(50,50), start=(25,2), end=(8,2), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # WESTWARD
+    # a = autonomous_vehicle(world_size=(50,50), start=(25,2), end=(8,2), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # WESTWARD
     # a = autonomous_vehicle(world_size=(50,50), end=(25,2), start=(8,2), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25)
     # a = autonomous_vehicle(world_size=(50,50), end=(45,2), start=(8,2), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # EASTWARD
-    # a = autonomous_vehicle(world_size=(50,50), start=(45,2), end=(45,45), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # EASTWARD
-    
+    a = autonomous_vehicle(world_size=(50,50), start=(45,2), end=(45,30), scale_factor=5, starting_direction=utils.direction.NORTH, turn_time=1.25) # EASTWARD 
     a.main_loop() 
-    # a.scan_horizon()
-    # dump_map(a.gw.world)
-    # a.gw.run_a_star()
-    # dump_map(a.gw.world)
-    # a.pf.followPath(a.gw.path_to_dest)
     
     
     

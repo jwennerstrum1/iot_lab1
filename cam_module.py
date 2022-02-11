@@ -49,44 +49,7 @@ class camera:
             for category in detection.categories:
                 if category.label == 'stop sign' :
                     stop_sign_in_view = True
-                    # bb = detection.bounding_box
-                    # pdb.set_trace()
-                    # dist = utils.linear_distance((bb.left, bb.top), (bb.right, bb.bottom))
-                    # if category.label == 'stop sign':
+                    
                 elif category.label == 'person':
                     pedestrian_in_view = True
         return pedestrian_in_view, stop_sign_in_view
-        
-    # def detects_human(self):
-    #     success, image = self.capture_image()
-    #     image = cv2.flip(image, 0) # flip the image over the x-axis
-    #     detections = self.detector.detect(image)
-    #     for detection in detections:
-    #         for category in detection.categories:
-    #             if category.label == 'stop sign' or category.label == 'person':
-    #                 bb = detection.bounding_box
-    #                 pdb.set_trace()
-    #                 dist = utils.linear_distance((bb.left, bb.top), (bb.right, bb.bottom))
-    #                 if category.label == 'stop sign':
-    #                     if dist > 400:
-    #                         fc.stop()
-    #                     else:
-    #                         if dist > 212:
-    #                             fc.stop()
-    #                             nhasStopSign = True
-
-
-    #                           hasStopSign = True
-
-    #                           if not stopSignInLastFrame:
-    #                               #first time seeing a stop sign
-    #                               # fc.stop()
-    #                               print("[CAMERA] Stop sign detected")
-    #                               stopSignInLastFrame=True
-
-    #                           break
-    #                   if hasStopSign:
-    #                       # break out of larger loop with all the detections
-    #                       break
-        
-      

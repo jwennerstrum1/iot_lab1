@@ -23,7 +23,6 @@ class grid_world:
         self.world = world
         self.f_costs = {start: 0} # Dictionary between coordinates (TUPLE) and value (double)
         self.path_to_dest = deque()
-        
 
     def reset(self):
         self.open_list = []
@@ -45,14 +44,11 @@ class grid_world:
         self.f_costs = {start_coord: 0} # set the initial f_cost
         return
 
-
     def run_a_star(self, boundary_threshold=1):
         # add start to open
         bisect.insort(self.open_list, self.start)
         while True:
             current = self.popLowestCostNode()
-            # if (len(self.open_list)  == 1):
-                # pdb.set_trace()
             self.closed_list.append(current)
 
             if current == self.end:
@@ -95,16 +91,7 @@ class grid_world:
             costOnRecord = self.f_costs[node.coord]
             if newCost < costOnRecord:
                 return True
-        return False
-
-    # def linearDistance(self, p1, p2):
-    #     x1 = p1.coord[0]
-    #     y1 = p1.coord[1]
-    #     x2 = p2.coord[0]
-    #     y2 = p2.coord[1]
-    #     dist = math.sqrt((y2 - y1)** 2 + (x2 - x1)**2)
-    #     return dist
-    
+        return False    
 
     def popLowestCostNode(self):
         item = self.open_list.pop()
@@ -207,8 +194,6 @@ class grid_world:
                 self.world[x_min:x_max][i] = 0
 
             return
-        
-        
         
 
 class grid_cell:

@@ -66,22 +66,6 @@ class navigation_module:
         self.step_forward(1)
         return self.current_direction, self.current_node
 
-    # def follow_path_for_n(self, path, n=np.inf):
-    #     # assume the starting point is the first element of the path
-    #     # and that the car is facing the y-axis
-    #     count = 0
-    #     self.current_node = path.pop()
-    #     # pdb.set_trace()
-    #     while len(path) != 0 and count < n:
-    #         next_node = path.pop()
-    #         self.current_direction = self.face_next_node(next_node)
-    #         self.current_node = next_node
-    #         self.step_forward(1)
-    #         count+=1
-            
-
-        return self.current_node, self.current_direction
-
     def face_next_node(self, next_node):
         idx = self.get_turn_idx(next_node)
         if idx is None:
