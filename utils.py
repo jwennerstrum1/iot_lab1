@@ -5,11 +5,7 @@ import pdb
 import math
 from enum import IntEnum
 
-# filename = 'tmpFile.txt'
-# filename = 'block_left.txt'
-
 def readArrayFromFile(filename):
-    # pdb.set_trace()
     f = open(filename, 'r')
     line = f.readline()
     cleanedString = clean_string(line)
@@ -18,15 +14,12 @@ def readArrayFromFile(filename):
     dim_x = 1
     line = f.readline()
     while line != '' and line != '\n':
-      # pdb.set_trace()
       cleanedString = clean_string(line)
       array_column = str2arr(cleanedString)
-      # pdb.set_trace()
       world = np.concatenate((world, array_column), 0)
       dim_x+=1
       line = f.readline()
     f.close()
-    # pdb.set_trace()
     world = np.reshape(world, (dim_x, dim_y))
     return world
 
@@ -40,7 +33,6 @@ def clean_string(line):
     start = loc.start()
     end = line.find(']')
     line = line[start:end]
-    # line = ','.join(line.split(' '))
     return line
 
 def convertToCartesian(degrees, distance):
@@ -72,9 +64,6 @@ def rotation_transform(theta, point):
     res = rotation_matrix @ to_multiply
     return np.round(res[0][0], 4), np.round(res[1][0], 4)
 
-
-
-
 def getInterpolationCoordinates(x, y, previousPoint):
     x_prev = previousPoint[0]
     y_prev = previousPoint[1]
@@ -97,7 +86,7 @@ def getInterpolationCoordinates(x, y, previousPoint):
     if abs(m) < 1:
         y_t = y1
         for x_t in np.arange(x1, x2):
-            # buffer logic
+            # padding logic
             for i in range(1,2):
                 coords.append((x_t, y_t - i))
                 coords.append((x_t, y_t + i))
@@ -110,7 +99,7 @@ def getInterpolationCoordinates(x, y, previousPoint):
             iter = reversed(np.arange(y2+1,y1+1))
         x_t = x1
         for y_t in iter:
-            # buffer logic
+            # padding logic
             for i in range(1,2):
                 coords.append((x_t - i, y_t))
                 coords.append((x_t + i, y_t))
@@ -120,14 +109,12 @@ def getInterpolationCoordinates(x, y, previousPoint):
     return coords
 
 
-
 def is_point_in_bounds(point, x_max=0, y_max=0):
     # check whether the rounded value will be in bounds or not
     x = round(point[0])
     y = round(point[1])
     retval = x >= 0 and x < x_max and y >= 0 and y < y_max
     return retval
-    
     
 def dump_map(array, filename="grid_world_dump.txt"):
     print_options = np.get_printoptions()

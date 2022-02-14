@@ -5,9 +5,7 @@ from collections import deque
 import math
 from enum import IntEnum
 import pdb
-import grid_world
-import gw_driver
-from utils import *
+import utils
 
 # -----> y
 # |
@@ -32,25 +30,28 @@ from utils import *
 
 class navigation_module:
 
-    def __init__(self, turn_time=1.3, avg_speed=25, step_size=5, direction=direction.NORTH):
+    def __init__(self, turn_time=1.3, avg_speed=25, step_size=5, direction=utils.direction.NORTH):
         self.turn_time = turn_time
         self.avg_speed = avg_speed # in cm/sec at power 1
         self.step_size = step_size # in cm
         self.turn_funcs = [self.turn_left, self.turn_right]
         self.current_direction = direction
         self.current_node = None
+
+    def set_current_node(self, node):
+        self.current_node = node
         
     def turn_right(self, current_direction):
         fc.turn_left(1) # due to a bug with picar
         time.sleep(self.turn_time + 0.1)
         fc.stop()
-        return direction((current_direction + 4 - 1) % 4)
+        return utils.direction((current_direction + 4 - 1) % 4)
 
     def turn_left(self, current_direction):
         fc.turn_right(1) # due to a bug with picar
         time.sleep(self.turn_time)
         fc.stop()
-        return direction((current_direction + 1) % 4)
+        return utils.direction((current_direction + 1) % 4)
 
     def step_forward(self, num_steps):
         pause_time = num_steps * self.step_size / self.avg_speed
@@ -59,21 +60,11 @@ class navigation_module:
         fc.stop()
         time.sleep(0.1)
 
-    def follow_path_for_n(self, path, n=np.inf):
-        # assume the starting point is the first element of the path
-        # and that the car is facing the y-axis
-        count = 0
-        self.current_node = path.pop()
-        # pdb.set_trace()
-        while len(path) != 0 and count < n:
-            next_node = path.pop()
-            self.current_direction = self.face_next_node(next_node)
-            self.current_node = next_node
-            self.step_forward(1)
-            count+=1
-            
-
-        return self.current_node, self.current_direction
+    def move_to_next_coord(self, next_node):
+        self.current_direction = self.face_next_node(next_node)
+        self.current_node = next_node
+        self.step_forward(1)
+        return self.current_direction, self.current_node
 
     def face_next_node(self, next_node):
         idx = self.get_turn_idx(next_node)
@@ -89,11 +80,11 @@ class navigation_module:
         dy = next_node[1] - self.current_node[1]
 
         if abs(dx) > 0:
-            if self.current_direction == direction.WEST or self.current_direction == direction.EAST:
+            if self.current_direction == utils.direction.WEST or self.current_direction == utils.direction.EAST:
                 return
             tmp = self.current_direction + dx + 1
         elif abs(dy) > 0:
-            if self.current_direction == direction.NORTH or self.current_direction == direction.SOUTH:
+            if self.current_direction == utils.direction.NORTH or self.current_direction == utils.direction.SOUTH:
                 return
             tmp = self.current_direction + dy
         else:
@@ -102,7 +93,3 @@ class navigation_module:
         idx = (tmp // 2) % 2
         return idx
 
-    
-
-
-    

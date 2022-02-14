@@ -23,7 +23,6 @@ class grid_world:
         self.world = world
         self.f_costs = {start: 0} # Dictionary between coordinates (TUPLE) and value (double)
         self.path_to_dest = deque()
-        
 
     def reset(self):
         self.open_list = []
@@ -45,14 +44,11 @@ class grid_world:
         self.f_costs = {start_coord: 0} # set the initial f_cost
         return
 
-
     def run_a_star(self, boundary_threshold=1):
         # add start to open
         bisect.insort(self.open_list, self.start)
         while True:
             current = self.popLowestCostNode()
-            # if (len(self.open_list)  == 1):
-                # pdb.set_trace()
             self.closed_list.append(current)
 
             if current == self.end:
@@ -95,16 +91,7 @@ class grid_world:
             costOnRecord = self.f_costs[node.coord]
             if newCost < costOnRecord:
                 return True
-        return False
-
-    # def linearDistance(self, p1, p2):
-    #     x1 = p1.coord[0]
-    #     y1 = p1.coord[1]
-    #     x2 = p2.coord[0]
-    #     y2 = p2.coord[1]
-    #     dist = math.sqrt((y2 - y1)** 2 + (x2 - x1)**2)
-    #     return dist
-    
+        return False    
 
     def popLowestCostNode(self):
         item = self.open_list.pop()
@@ -138,6 +125,75 @@ class grid_world:
 
     def get_y_length(self):
         return len(self.world[0])
+
+    def get_distance_to_closest_barrier(self, location, direction):
+        x = location[0]
+        y = location[1]
+        if direction == utils.direction.NORTH or direction == utils.direction.SOUTH:
+            path = self.world[x][:]
+            z = y
+        else:
+            path = self.world[:][y]
+            z = x
+        direction_sign = (((direction + 1) // 2) % 2 * 2 - 1) * -1
+        # +1  -> North or East
+        # -1 -> South or West
+        distance_count = 1
+        query_location = z + distance_count * direction_sign
+        while query_location >= 0 and  query_location < len(path) :
+            value_at_distance = path[query_location]
+            if value_at_distance == 0 or value_at_distance == 254:
+            # find the ditance to the next barrier in path (grid world entry is greater than 0)
+                distance_count += 1
+                query_location = z + distance_count * direction_sign
+                continue
+            break
+            
+        return distance_count
+
+    def remove_barriers_in_path(self, location, direction):
+        x = location[0]
+        y = location[1]
+        direction_sign = (((direction + 1) // 2) % 2 * 2 - 1) * -1
+        
+        if direction == utils.direction.NORTH or direction == utils.direction.SOUTH:
+            x_min =  x - 1
+            if x_min < 0:
+                x_min = 0
+
+            x_max = x+2
+            if x_max > len(self.world):
+                x_max = x_max - 1
+
+            if direction == utils.direction.NORTH:
+                y_min = y+1
+                y_max = len(self.world[0])
+            else:
+                y_min = 0
+                y_max = y
+
+            for i in range(x_min, x_max):
+                self.world[i][y_min:y_max] = 0
+                
+        else: # East or West
+            y_min = y - 1
+            if y_min < 0:
+                y_min = 0
+            y_max = y+2
+            if y_max > len(self.world[0]):
+                y_max = y_max - 1
+
+            if direction == utils.direction.EAST:
+                x_min = x+1
+                x_max = len(self.world)
+            else:
+                x_min = 0
+                x_max = x
+
+            for i in range(y_min, y_max):
+                self.world[x_min:x_max][i] = 0
+
+            return
         
 
 class grid_cell:
