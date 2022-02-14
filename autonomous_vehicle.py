@@ -81,6 +81,8 @@ class autonomous_vehicle:
         if self.previousPointOnObject is not None:
             dist_to_last_point = utils.linear_distance((x_gw_float, y_gw_float), self.previousPointOnObject)
             if dist_to_last_point > 2:
+                # distance between objects must be greater than 2*scaling_factor cm for this
+                # detection to be a considered a continuation of an object
                 return True
         return False
         
@@ -166,13 +168,13 @@ class autonomous_vehicle:
             utils.dump_map(self.gw.world, filename=("dump_world_" + str(count)  + "_scan.txt"))
 
             # path plan
-            # self.gw.run_a_star(boundary_threshold=self.scan_count-1) # only consider bounds that were identified in the last two scans when calculating A-Star
             self.gw.run_a_star()
             self.markPointOnMap(self.my_location[0], self.my_location[1], identifier=255)
             utils.dump_map(self.gw.world, filename=("dump_world_" + str(count)  + "_astar.txt"))
 
             # path execution
-            self.markPointOnMap(self.my_location[0], self.my_location[1], identifier=0) # clear current location on map before moving point
+            # clear current location on map before moving point
+            self.markPointOnMap(self.my_location[0], self.my_location[1], identifier=0)
             self.follow_path(self.gw.path_to_dest, n=6) # follow path for n steps
 
             # prepare for next iteratio

@@ -1,0 +1,143 @@
+* Part 1
+
+** Picar Assembly:
+
+Used 
+*** Show picture of car
+
+*** Show schematic of circuit
+
+** "Dumb" Navigation:
+I leveraged the script provided in figure 7 of the lab to understand how fast the car was going when different power values were provided.  
+
+< image: code>
+
+< image: printout after running code>
+
+After running this code, I would assume that the car runs around 25 cm/sec.  I would later use this value to parameterize my navigation module in part 2.
+
+*** How to make sure the car had accurate navigations?
+**** Car Calibration
+***** Ran time tests that measured how fast the car was going on average in a straight line when the power parameter of 1 supplied to the car.  Similarly, I did the same time tests while the car was turning. 
+***** Since each movement of the car would produce some degree of error, I wanted to minimimize the movement of the car while also giving it a high degree of precision to navigate around the environment.  For this reason, I added a scale_factor that maps each cell in the grid world to a number of centimeters.  I chose 5.
+
+** Scanning & Driving
+
+During this step fo the lab I leveraged the code provided in the picar-4wd repository called *obstacle_avoidance.py*.  I had to slightly modify this code in order to get the car to move in the right direction.  
+
+<show code>
+
+The code scans the horizon and will turn once it detects an object 2 cm away from the front of the car.
+
+Using this code, I placed the car in an environment and was able to perform roomba-like dumb navigation which avoided walls, obstacles, and my feet when in the way
+
+* Part 2:
+
+** More Advanced Mapping
+*** Scanning the environment
+**** In order to achieve an accurrate reading of the surrounding environment, I chose to rotate the ultrasonic sensor in increments of 5 degrees.
+**** Interpolation boundaries
+***** To determine whether points were considered the same object or not, I calculated the distance between coordinates of detected objects.  If the distance between these objects was less then a certain threshold (I chose 2*scaling factor) to be condsidered a contination of an object
+**** Noise Reduction
+***** Adding blinders
+***** Twisted wires
+**** Barrier Avoidance
+*****  Padding
+*Initially the the car keeps bumping into walls.
+****** Inserting additional numbers around the barriers gives us a sort of safety factor.
+***** During mapping, we consider that the camera is not at the center of the car body, and we perform the necessary tranlsation and rotations to understand better place the detectinos on the map
+
+** Object Detection
+
+As recommended in the lab material, I leveraged OpenCV APIs to perform image I/O and manipulation while TensorFlow was utilized to apply pretrained object detection models
+
+
+*** Model Selection:
+
+**** Considered a few models:
+
+**** Went to https://tfhub.dev/s?deployment-format=lite&module-type=image-object-detection and filtered by models performing object detection, and those using the TFLite format.  In this manner, I knew that I would achieve my desired behavior while maintaining satisfactory levels of performance.  I considered:
+*- efficientdet/lite1/detection, efficientdet/lite2/detection, and efficientdet/lite3/detection, and the first had the best behavior
+
+*** Frame Rate Speedup:
+
+**** Hardware acceleration:
+Theoretically, hardware acceleration could improve the performance of the model by more rapidly computing repetetive process in parrallel.  However, I was not able to test this.  My understanding is that I would need write specific code leveraging the OpenGL SDK to offload procecsses onto the Broadcome syste on a chip that includes a Videocore GPU.  Additionally, this would assume that the time taken to transfer data between the CPU and GPU is not great enough that it would decrease the overall processing time of the raspberri pi.
+
+**** Multithreading 
+Having a higher number of active threads has the potential to speed up image processing use cases under certain conditions.  Since the raspberry pi 4 is a quad-core device, it is possible for truly parrallel processing. To test out whether multiple threads assisted my use case, I
+*
+
+** Self-Driving Navigation
+*** Path Navigation
+**** Dynamic Scanning
+***** After scanning the environment, processing the results, and updating the grid-world map, I would run A* with the grid_world class.  
+***** To help me understand the evolution of the environment, I chose to fill in the grid world with a number, /n/, wherever a barrier was detected.  The value of /n/  represetns  the /n^th/ time the ultrasonic sensor was being run.  This made it easy for me to understand what bounderies were being detected when
+**** A* Implementation
+***** References:
+****** youtube link: https://youtu.be/-L-WgKMFuhE?t=587d
+***** Setup:
+****** G_cost: the distance from the starting node (capturing how long the path is)
+****** H_cost: the distance betwen the end node
+****** F_cost: the sup of g & h cost
+
+
+
+** Putting it all together and testing
+*** Manageable Movement
+**** One key difference between the "dumb" navigation and the more advanced navigation implemented in part 2 of the lab if the discrete steps taken while following the path generated by the A* path planning algorithm. 
+**** I did this to make overall control of the environment easy.  I could precisely know which cell within the grid world the car had entered.  This helped with debugging because at each iteration of the car's navigation, I knew where it was supposed to be located on the grid world, and I could compare the environment scan with the true surroundings.
+
+*** Applying Rules of the Road
+**** Stop Sign:
+***** Stop for a few seconds, and continue
+
+**** Person:
+***** Wait until the person leaves
+***** The person shouldn't  interfere with the A* path planning since they are only a temporary obstacles.  After they leave, they no longer impede the path from the car's start to end locations
+
+
+
+** Overall Code Architecture
+* Shortcomings:
+
+** Since the car moves in incremental steps, it does not consider the speed while moving.
+** I am only performing a single sweep of the environment in a clockwise fashion.  It's possible performing continuous motions of the us sensor could produce more accurate readings.
+
+
+* Additional Material
+
+
+* Classes vs procedures?
+** Classes were a helpful way to organize my thoughts and modularize work
+
+* Todo:
+
+** Images
+
+*** Image of the calibration script to substantiate why I configured the car to run on average at 
+
+* References:
+
+** Car Assembly
+
+*** Used the SunFounder PiCar usermanual for setup https://github.com/sunfounder/picar-4wd/blob/master/docs/Picar-4wd%20User%20Manual.pdf
+
+** Scripts
+
+*** Calibration:
+**** Figure 7 from Lab 1, except I had to change backward to forward https://docs.google.com/document/d/1pxzkC9UOPHBr24PRmHCYh3iSYBfWYOAvCHy5_Pd2p-I/edit#
+*** "Dumb" Navigation
+**** I used the ~obstacle_avoidance.py~ code in in SunFounders picar repository
+
+** A* Implementation
+*** https://youtu.be/-L-WgKMFuhE?t=587
+
+** Object detection:
+*** https://github.com/tensorflow/tfjs-models
+
+** An understanding of the Raspberry Pi's GPU and hardware accelleration
+*** https://petewarden.com/2014/08/07/how-to-optimize-raspberry-pi-code-using-its-gpu/ 
+*** https://medium.com/analytics-vidhya/towards-gpu-accelerated-image-classification-on-low-end-hardware-ec592e125ad9
+*** https://www.cnx-software.com/2020/02/03/raspberry-pi-4-opengl-es-3-1-conformant-vulkan-drivers/
+
